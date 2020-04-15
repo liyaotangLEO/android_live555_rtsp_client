@@ -59,7 +59,7 @@ unsigned char sps_pps[21] = {0x00, 0x00, 0x00, 0x01, 0x67, 0x4D, 0x00, 0x1E,
 /** 从 sdp 中解析出来的 sps_pps 的大小 */
 size_t sps_pps_size = 0;
 /** 从 sdp 中解析出来的 sps_pps */
-unsigned char sps_pps_2[128];
+unsigned char sps_pps_from_sdp[128];
 
 jclass _clazz;
 jobject callback_object;
@@ -492,7 +492,7 @@ void continueAfterDESCRIBE(RTSPClient *rtspClient, int resultCode, char *resultS
         char *const sdpDescription = resultString;
 //    env << *rtspClient << "Got a SDP description:\n" << sdpDescription << "\n";
         tmp = "Got a SDP description:\n" + string(resultString);
-        sps_pps_size = get_sps_pps_from_sdp(resultString, sps_pps_2);
+        sps_pps_size = get_sps_pps_from_sdp(resultString, sps_pps_from_sdp);
         LOGE("SDP description： =============================================================");
         infoCallBack(charToJstring(_env, tmp.c_str()));
         // Create a media session object from this SDP description:
@@ -851,6 +851,10 @@ unsigned char *buffer = NULL;
 int len = 0;
 unsigned char *temp_sps = NULL;
 unsigned char *temp_sps_pps = NULL;
+/** 是否从码流中读取到 sps 帧 */
+bool has_sps = false;
+/** 是否从码流中读取到 pps 帧 */
+bool has_pps = false;
 
 void DummySink::afterGettingFrame(unsigned frameSize, unsigned numTruncatedBytes,
                                   struct timeval presentationTime,
@@ -890,6 +894,7 @@ void DummySink::afterGettingFrame(unsigned frameSize, unsigned numTruncatedBytes
                 temp_sps[3] = 0x01;
                 memcpy(temp_sps + 4, fReceiveBuffer, frameSize);
 
+                has_sps = true;
             }
 
             // sps + pps
@@ -910,10 +915,11 @@ void DummySink::afterGettingFrame(unsigned frameSize, unsigned numTruncatedBytes
                 temp_sps_pps[l + 3] = 0x01;
                 memcpy(temp_sps_pps + l + 4, fReceiveBuffer, frameSize);
 
-
                 l = 0;
                 free(temp_sps);
                 temp_sps = NULL;
+
+                has_pps = true;
             }
 
             //IDR
@@ -921,23 +927,24 @@ void DummySink::afterGettingFrame(unsigned frameSize, unsigned numTruncatedBytes
                 runningFlag = 0;
 
                 // 先发送SPS_PPS
-                if (len == 0) {
-                    jbyteArray jbarray = _env->NewByteArray(sps_pps_size);
-                    _env->SetByteArrayRegion(jbarray, 0, sps_pps_size,
-                                             (jbyte *) sps_pps_2);
-                    _env->CallVoidMethod(callback_object, callback_frame_method, jbarray, sps_pps_size);
-                    _env->DeleteLocalRef(jbarray);
-                } else {
+                if (has_pps && has_sps) {
                     jbyteArray jbarray = _env->NewByteArray(len);
-                    _env->SetByteArrayRegion(jbarray, 0, len,
-                                             (jbyte *) temp_sps_pps);
-                    _env->CallVoidMethod(callback_object, callback_frame_method, jbarray,
-                                         len);
+                    _env->SetByteArrayRegion(jbarray, 0, len, (jbyte *) temp_sps_pps);
+                    _env->CallVoidMethod(callback_object, callback_frame_method, jbarray, len);
                     _env->DeleteLocalRef(jbarray);
 
                     len = 0;
                     free(temp_sps_pps);
                     temp_sps_pps = NULL;
+                    LOGE("%s: pps_sps from stream", __FUNCTION__);
+                }
+                else {
+                    jbyteArray jbarray = _env->NewByteArray(sps_pps_size);
+                    _env->SetByteArrayRegion(jbarray, 0, sps_pps_size, (jbyte *) sps_pps_from_sdp);
+                    _env->CallVoidMethod(callback_object, callback_frame_method, jbarray, sps_pps_size);
+                    _env->DeleteLocalRef(jbarray);
+
+                    LOGE("%s: pps_sps from sdp", __FUNCTION__);
                 }
 
                 // IDR 前面加上 {00, 00, 00, 01}
