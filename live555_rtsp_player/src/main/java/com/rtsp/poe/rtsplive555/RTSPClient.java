@@ -9,7 +9,7 @@ public class RTSPClient {
     private  static RTSPVideoListener mVideoListener;
     private  static RTSPInfoListener mInfoListener;
 
-    public static final String RTSP_PATH = "rtsp://192.168.1.110/media/live/1/1";
+    public static final String DEFAULT_RTSP_PATH = "rtsp://192.168.1.110/media/live/1/1";
 
     static {
         System.loadLibrary("rtsp-lib");

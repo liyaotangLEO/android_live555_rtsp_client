@@ -29,7 +29,7 @@ public class PreviewPresenter {
     private SurfaceView surfaceView;
 
     /** rtsp地址 */
-    private String previewAddress = RTSPClient.RTSP_PATH;
+    private String previewAddress = RTSPClient.DEFAULT_RTSP_PATH;
 
     /** 是否开始了预览 */
     private boolean isStartPreview = false;

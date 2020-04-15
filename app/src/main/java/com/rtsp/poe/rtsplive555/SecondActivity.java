@@ -20,6 +20,7 @@ public class SecondActivity extends AppCompatActivity implements PreviewView {
     /** 预览渲染的View */
     private SurfaceView mSurfaceView;
 
+    private String RTSP_ADDRESS = "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -41,7 +42,7 @@ public class SecondActivity extends AppCompatActivity implements PreviewView {
         mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
-                mPreviewPresenter.setPreviewAddress("rtsp://192.168.1.127/stream1");
+                mPreviewPresenter.setPreviewAddress(RTSP_ADDRESS);
 //                mPreviewPresenter.setPreviewAddress("rtsp://192.168.1.108/media/live/1/1");
                 mPreviewPresenter.startPreview();
             }
@@ -58,7 +59,7 @@ public class SecondActivity extends AppCompatActivity implements PreviewView {
         });
 
         EditText et = findViewById(R.id.et_url);
-        et.setText(RTSPClient.RTSP_PATH);
+        et.setText(RTSP_ADDRESS);
     }
 
     public void startPreview(View view) {

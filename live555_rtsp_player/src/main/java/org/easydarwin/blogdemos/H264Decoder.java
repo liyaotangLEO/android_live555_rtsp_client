@@ -43,7 +43,6 @@ public class H264Decoder {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public boolean onFrame(byte[] buf, int offset, int length) {
         try {
